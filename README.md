@@ -147,5 +147,5 @@ Apache 2.0<br>
 
 
 ## Contributors
-Edsel Jay A. Gundran
-Edlhyn T. Mendeoro
+Edsel Jay A. Gundran<br>
+Edlhyn T. Mendeoro<br>
