@@ -2,74 +2,155 @@
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 require '../src/vendor/autoload.php';
-$app = new \Slim\App();
+$app = new \Slim\App;
+//endpoint get greeting
+$app->get('/getName/{fname}/{lname}', function (Request $request, Response
 
-// Define the organizational structure 
-$organizationalStructure = [
-    "President" => [
-        "Name" => "Dr. Jaime I. Manuel Jr.",
-        "Board Secretary" => "Dr. Antonio O. Ogbinar",
-        "University Secretary" => "Dr. Antonio O. Ogbinar",
-        "Vice Presidents" => [
-            "Administration" => [
-                "Vice President" => "Dr. Estrella N. Perez",
-                "Directors" => [
-                    "Administrative Services" => "Atty. Kristine Gay B. Balanag",
-                    "Auxiliary Services" => "Dr. Florendo Q. Damasco Jr.",
-                    "Bids & Awards" => "Atty. Kristine Gay B. Balanag",
-                    "Finance Services" => "Ms. Placida E. De Guzman",
-                    "Medical Services" => "Dr. Maria Consuelo W. Alcantara",
-                    "Internal Quality Assurance System" => "Dr. Angelina J. Prado"
-                ]
-            ],
-            "Academic Affairs" => [
-                "Vice President" => "Dr. Honorio C. Buccat",
-                "Directors" => [
-                    "Instruction" => "Dr. Elsie M. Pacio",
-                    "Student Affairs and Services" => "Dr. Shalimar L. Navalta",
-                    "Sports" => "Mr. Paolo Jan F. Samson",
-                    "Cultural Affairs" => "Prof. Irene N. Gomez",
-                    "National Training Service Program" => "Dr. Jo-anne D. Villar",
-                    "Library Services & Development" => "Dr. Liceria G. Enteria",
-                    "Student Admission & Records" => "Dr. Valoree M. Salamanca",
-                    "Alumni Affairs" => "Prof. Delia M. Imperial",
-                    "Internationalization and Linkages" => "Dr. Joanne C. Rivera"
-                ]
-            ],
-            "Research & Extension" => [
-                "Vice President" => "Dr. Cynthia M. Rodriguez",
-                "Directors" => [
-                    "Research" => "Mr. Kenneth G. Bayani",
-                    "Extension" => "Dr. Eladio E. Camalig Jr."
-                ]
-            ],
-            "Planning & Resource Development" => [
-                "Vice President" => "Dr. Prescilo P. Fontanilla Jr.",
-                "Directors" => [
-                    "Resource Development & GAD Focal Person" => "Ms. Perla S. Sotelo",
-                    "Planning & Development" => "Dr. Lilito D. Galvan",
-                    "Business Affairs" => "Dr. Melchor D. Salom",
-                    "Management Information System" => "Dr. Stephan Kupsch"
-                ]
-            ]
+$response, array $args) {
+$name = $args['fname']." ".$args['lname'];
+$response->getBody()->write("Hello, $name");
+return $response;
+
+});
+//endpoint postName
+$app->post('/postName', function (Request $request, Response $response, array $args)
+{
+
+    $data=json_decode($request->getBody());
+    $fname =$data->fname ;
+    $lname =$data->lname ;
+    //Database
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "demo";
+    try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname",
+    
+    $username, $password);
+    
+    $conn->setAttribute(PDO::ATTR_ERRMODE,
+    
+    PDO::ERRMODE_EXCEPTION);
+    
+    $sql = "INSERT INTO names (fname, lname)
+    VALUES ('". $fname ."','". $lname ."')";
+    
+    
+    $conn->exec($sql);
+    $response->getBody()->write(json_encode(array("status"=>"success","data"=>null)));
+    
+    } catch(PDOException $e){
+    $response->getBody()->write(json_encode(array("status"=>"error",
+    "message"=>$e->getMessage())));
+    }
+    $conn = null;
+
+return $response;
+});
+
+//endpoint printName
+$app->post('/printName', function (Request $request, Response $response, array $args) {
+    $data = [
+        [
+            "lname" => "hortizuela",
+            "fname" => "manny"
+        ],
+        [
+            "lname" => "licayan",
+            "fname" => "arnold"
         ]
-    ],
-    "Chancellors" => [
-        "Northern La Union Campus" => "Dr. Junifer Rey E. Tabafunda",
-        "Mid La Union Campus" => "Dr. Eduardo C. Corpuz",
-        "South La Union Campus" => "Dr. Floribeth P. Cuison"
-    ],
-    "Executive Directors" => [
-        "Open University System" => "Dr. Joanne C. Rivera",
-        "Sericulture Research & Development Institute" => "Dr. Cristeta F. Gapuz",
-        "OIC Executive Director National Apiculture Research & Dev't Institute" => "Dr. Gregory B. Viste"
-    ]
-];
+    ];
 
-// Define the API route
-$app->get('/orgstructure', function (Request $request, Response $response) use ($organizationalStructure) {
-    $response->getBody()->write(json_encode($organizationalStructure, JSON_PRETTY_PRINT));
+    $responseData = [
+        "status" => "success",
+        "data" => $data
+    ];
+
+    // Convert the data to JSON and set the response content type
+    $response->getBody()->write(json_encode($responseData));
     return $response->withHeader('Content-Type', 'application/json');
+});
+
+// endpoint updateName
+$app->put('/updateName', function (Request $request, Response $response, array $args)
+{
+
+    $data = json_decode($request->getBody());
+$fname = $data->fname;
+$lname = $data->lname;
+
+// Database
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "demo";
+
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+
+    // Set the PDO error mode to exception
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $id = $data->id; 
+
+    // Update the 'fname' and 'lname'
+    $sql = "UPDATE names SET fname = :fname, lname = :lname WHERE id = :id";
+
+    $stmt = $conn->prepare($sql);
+
+    $stmt->bindParam(':fname', $fname);
+    $stmt->bindParam(':lname', $lname);
+    $stmt->bindParam(':id', $id);
+
+    $stmt->execute();
+
+    $response->getBody()->write(json_encode(array("status" => "success", "data" => null)));
+} catch (PDOException $e) {
+    $response->getBody()->write(json_encode(array("status" => "error", "message" => $e->getMessage())));
+} finally {
+    $conn = null;
+}
+
+return $response;
+});
+
+
+//endpoint deleteName
+$app->delete('/deleteName', function (Request $request, Response $response, array $args) {
+
+    $data = json_decode($request->getBody());
+    $id = $data->id; // Assuming you pass the 'id' in the JSON request
+
+    // Database
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "demo";
+
+    try {
+        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+
+        // Set the PDO error mode to exception
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Delete the record with the specified 'id'
+        $sql = "DELETE FROM names WHERE id = :id";
+
+        $stmt = $conn->prepare($sql);
+
+        $stmt->bindParam(':id', $id);
+
+        $stmt->execute();
+
+        $response->getBody()->write(json_encode(array("status" => "success", "data" => null)));
+    } catch (PDOException $e) {
+        $response->getBody()->write(json_encode(array("status" => "error", "message" => $e->getMessage())));
+    } finally {
+        $conn = null;
+    }
+
+    return $response;
 });
 
 $app->run();
